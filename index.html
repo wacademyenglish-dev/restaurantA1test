@@ -1,0 +1,1478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>WOLF LABS | Supermarket Survival (A1)</title>
+    
+    <!-- Epic Typography -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800;900&family=Inter:wght@400;600;700;800&family=Fira+Code:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <style>
+        /* --- WOLF LABS ENGINE V3.0: SOLID PRESTIGE SKIN --- */
+        :root {
+            --bg-base: #030508; 
+            --surface: rgba(18, 21, 28, 0.95); 
+            --border: rgba(255, 255, 255, 0.15);
+            --accent: #1DB954; 
+            --accent-glow: rgba(29, 185, 84, 0.2);
+            --accent-gold: #D4AF37;
+            --correct: #1DB954;
+            --incorrect: #E50914; 
+            --text-main: #FFFFFF;
+            --text-dim: #9BA3AF;
+            --font-display: 'Inter', sans-serif;
+            --font-body: 'Inter', sans-serif;
+            --font-code: 'Fira Code', monospace;
+            --player-height: 90px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            background-color: var(--bg-base); color: var(--text-main);
+            font-family: var(--font-body); line-height: 1.6;
+            overflow: hidden; display: flex; flex-direction: column;
+            min-height: 100vh; overscroll-behavior-y: none;
+        }
+
+        /* --- AMBIENT CINEMATIC BACKGROUND --- */
+        .ambient-bg {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2;
+            background: linear-gradient(to bottom, rgba(3, 5, 8, 0.7) 0%, rgba(3, 5, 8, 0.95) 100%), 
+                        url('https://images.unsplash.com/photo-1542838132-92c53300491e?q=80&w=2500&auto=format&fit=crop') no-repeat center center fixed;
+            background-size: cover;
+        }
+        .ambient-orbs { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; overflow: hidden; pointer-events: none; }
+        .orb { position: absolute; border-radius: 50%; filter: blur(120px); opacity: 0.2; animation: floatOrb 25s infinite alternate ease-in-out; }
+        .orb-1 { width: 50vw; height: 50vh; background: var(--accent); top: -10vh; left: -10vw; }
+        .orb-2 { width: 40vw; height: 40vh; background: #0077ff; bottom: -10vh; right: -5vw; animation-delay: -5s; }
+
+        @keyframes floatOrb { 0% { transform: translate(0, 0) scale(1); } 100% { transform: translate(4vw, 5vh) scale(1.1); } }
+
+        /* --- HEADER --- */
+        .header {
+            flex-shrink: 0; height: 80px; padding: 0 40px;
+            display: flex; align-items: center; justify-content: space-between; z-index: 100;
+            background: rgba(8, 10, 15, 0.95); border-bottom: 1px solid var(--border); position: relative;
+        }
+        .logo { font-family: var(--font-display); font-weight: 900; font-size: 1.2rem; letter-spacing: 2px; color: #fff; display: flex; align-items: center; gap: 8px;}
+        .logo span { color: var(--accent); }
+
+        .progress-container { position: absolute; bottom: -1px; left: 0; right: 0; height: 3px; background: rgba(255,255,255,0.05); }
+        .progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width 0.4s ease; box-shadow: 0 0 15px var(--accent-glow); }
+
+        .controls { display: flex; gap: 15px; }
+        .icon-btn { background: rgba(255,255,255,0.05); border: 1px solid var(--border); color: var(--text-dim); width: 45px; height: 45px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.3s; font-size: 1.1rem;}
+        .icon-btn:hover { background: rgba(255,255,255,0.15); color: #fff; border-color: var(--accent);}
+
+        /* --- MAIN SCROLLABLE AREA --- */
+        main {
+            flex: 1; width: 100%; 
+            padding: 20px 20px 120px 20px;
+            display: flex; flex-direction: column; align-items: center; 
+            position: relative; z-index: 10; overflow-y: auto; overflow-x: hidden;
+        }
+        main::-webkit-scrollbar { width: 6px; }
+        main::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.2); border-radius: 10px; }
+        
+        .step {
+            display: none; width: 100%; max-width: 1000px;
+            margin: auto 0; /* Centralização vertical inteligente */
+            animation: fadeScene 0.5s ease forwards;
+        }
+        .step.active { display: block; }
+        
+        @keyframes fadeScene {
+            0% { opacity: 0; transform: translateY(15px); }
+            100% { opacity: 1; transform: translateY(0); }
+        }
+
+        /* --- GLASS PANELS & CONTENT --- */
+        .glass-panel {
+            background: var(--surface); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--border); border-radius: 28px;
+            box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+            padding: 40px; position: relative; z-index: 10; width: 100%;
+        }
+
+        .dual-panel { display: flex; gap: 30px; align-items: center; width: 100%; }
+        .dual-panel > * { flex: 1; }
+        @media (max-width: 900px) { .dual-panel { flex-direction: column; gap: 30px; } }
+
+        h1, h2, h3 { font-family: var(--font-display); letter-spacing: -1px; margin-bottom: 15px;}
+        h1 { font-size: 4.2rem; line-height: 1.1; color: #fff; font-weight: 900;}
+        h2 { font-size: 2rem; color: var(--text-main); display: flex; align-items: center; gap: 12px; font-weight: 800;}
+        h2 i { color: var(--accent); }
+        p { font-size: 1.1rem; color: var(--text-dim); margin-bottom: 15px; line-height: 1.6;}
+
+        .code-tag { font-family: var(--font-code); font-weight: 800; color: var(--accent); font-size: 0.85rem; background: rgba(29, 185, 84, 0.1); padding: 4px 12px; border-radius: 4px; border: 1px solid rgba(29, 185, 84, 0.2); text-transform: uppercase; display: inline-block; margin-bottom: 15px;}
+
+        .btn {
+            padding: 14px 32px; border: 1px solid rgba(255,255,255,0.2); border-radius: 500px; font-family: var(--font-display);
+            font-size: 1.1rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
+            cursor: pointer; transition: all 0.3s; display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+            background: rgba(255,255,255,0.05); color: #fff;
+        }
+        .btn-accent { background: var(--text-main); color: #000; border: none; box-shadow: 0 5px 15px rgba(255,255,255,0.1); }
+        .btn:hover:not(:disabled) { transform: translateY(-3px); background: rgba(255,255,255,0.15);}
+        .btn-accent:hover:not(:disabled) { background: var(--accent); box-shadow: 0 10px 30px var(--accent-glow); color: #000; border: none;}
+        .btn:disabled { opacity: 0.3; pointer-events: none; }
+
+        /* --- SPEAKING HUB --- */
+        .speaking-hub {
+            margin-top: 30px; padding: 30px; background: rgba(29, 185, 84, 0.08);
+            border-radius: 20px; border: 1px solid rgba(29, 185, 84, 0.2); position: relative;
+        }
+        .speaking-hub::before {
+            content: '🎙️ SPEAKING HUB'; position: absolute; top: -14px; left: 30px;
+            background: var(--accent); color: #000; font-family: var(--font-body); font-size: 0.8rem;
+            font-weight: 900; padding: 6px 16px; border-radius: 8px; letter-spacing: 2px;
+        }
+        .speaking-hub p { color: #fff; font-weight: 700; font-size: 1.4rem; margin-bottom: 20px; line-height: 1.4;}
+        
+        .speaking-starters-container { display: flex; flex-wrap: wrap; gap: 10px; }
+        .speaking-starter {
+            background: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.15);
+            color: #fff; padding: 12px 20px; border-radius: 12px; font-size: 1.05rem; font-weight: 600; cursor: pointer; transition: all 0.3s;
+        }
+        .speaking-starter:hover, .speaking-starter.active { background: var(--accent); border-color: var(--accent); color: #000;}
+
+        /* --- INTERACTIVE MODULES --- */
+        .choice-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin-top: 15px; }
+        .choice-card { padding: 30px 20px; text-align: center; cursor: pointer; background: rgba(25, 30, 40, 0.6); border-radius: 20px; transition: all 0.3s; border: 1px solid var(--border); }
+        .choice-card:hover { background: rgba(255,255,255,0.08); transform: translateY(-5px); border-color: rgba(255,255,255,0.3);}
+        .choice-card.locked { pointer-events: none; opacity: 0.5; }
+        .choice-card h3 { font-size: 1.3rem; margin-bottom: 8px; color: #fff;}
+        .choice-card i { font-size: 2.5rem; color: var(--text-dim); display: block; margin-bottom: 15px; transition: 0.3s;}
+        .choice-card:hover i, .choice-card.selected i { color: var(--accent); }
+        .choice-card.selected { border-color: var(--accent); background: rgba(29, 185, 84, 0.15); }
+
+        .vocab-word { color: var(--accent); font-weight: 800; cursor: pointer; border-bottom: 2px dashed var(--accent); padding-bottom: 2px; transition: 0.3s;}
+        .vocab-word:hover { color: #fff; border-color: #fff; background: rgba(29, 185, 84, 0.2); padding: 0 4px; border-radius: 4px;}
+
+        .highlight-zone { padding: 30px; background: rgba(0,0,0,0.5); border-radius: 20px; margin-bottom: 20px; border: 1px solid var(--border); text-align: center; font-size: 1.4rem; line-height: 1.7;}
+
+        /* Sliders */
+        .slider-container { width: 100%; margin: 20px 0; }
+        .slider-labels { display: flex; justify-content: space-between; color: var(--text-dim); font-weight: 800; font-size: 0.85rem; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 12px;}
+        input[type=range] { -webkit-appearance: none; width: 100%; background: transparent; }
+        input[type=range]::-webkit-slider-thumb { -webkit-appearance: none; height: 28px; width: 28px; border-radius: 50%; background: var(--accent); cursor: pointer; margin-top: -12px; box-shadow: 0 0 15px rgba(0,0,0,0.8); border: 4px solid #fff;}
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 6px; cursor: pointer; background: rgba(255,255,255,0.2); border-radius: 3px; }
+
+        /* Video Wrapper */
+        .video-wrapper { position: relative; aspect-ratio: 16/9; width: 100%; max-width: 800px; margin: 0 auto 20px auto; border-radius: 20px; overflow: hidden; border: 1px solid var(--border);}
+        .video-wrapper iframe { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+        /* BUILDERS */
+        .drop-zone { min-height: 90px; border: 2px dashed rgba(255,255,255,0.3); border-radius: 16px; margin-bottom: 20px; display: flex; align-items: center; justify-content: center; padding: 20px; gap: 10px; flex-wrap: wrap; background: rgba(0, 0, 0, 0.4); transition: 0.3s;}
+        .drop-zone.active { border-color: var(--accent); background: rgba(29, 185, 84, 0.05); border-style: solid; }
+        .drop-zone.success { border-color: var(--correct); border-style: solid; background: rgba(29, 185, 84, 0.1); }
+        .drop-zone.auto-solved { border-color: var(--accent-gold); border-style: solid; background: rgba(212, 175, 55, 0.05); }
+        
+        .word-bank { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; min-height: 60px;}
+        .word-chip { padding: 12px 24px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.2); border-radius: 500px; cursor: pointer; user-select: none; transition: all 0.2s; font-weight: 700; color: #fff; font-size: 1.1rem; }
+        .word-chip:hover { background: rgba(255,255,255,0.15); transform: translateY(-3px); border-color: rgba(255,255,255,0.3);}
+        .word-chip.locked { pointer-events: none; }
+        .drop-zone .word-chip { background: #fff; color: #000; border-color: #fff; pointer-events: auto; opacity: 1;}
+        .drop-zone.success .word-chip { background: var(--correct); pointer-events: none; color: #000; border-color: var(--correct); }
+        .drop-zone.auto-solved .word-chip { background: var(--accent-gold); pointer-events: none; color: #000; border-color: var(--accent-gold); }
+
+        /* Error Finder */
+        .error-sentence { font-size: 2rem; word-spacing: 8px; line-height: 1.6; font-weight: 600; text-align: center; color: #fff;}
+        .error-word { display: inline-block; padding: 6px 12px; cursor: pointer; border-radius: 8px; transition: 0.2s; border: 1px solid transparent;}
+        .error-word:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2);}
+        .error-word.wrong { background: rgba(229, 9, 20, 0.2); color: var(--incorrect); border-color: var(--incorrect); animation: shake 0.4s ease; pointer-events: none;}
+        .error-word.correct { background: var(--correct); color: #000; border-color: var(--correct); font-weight: 800; pointer-events: none; transform: scale(1.05); box-shadow: 0 0 20px var(--accent-glow);}
+
+        /* True/False List */
+        .track-list { display: flex; flex-direction: column; gap: 12px; width: 100%; }
+        .track-row { display: flex; align-items: center; padding: 20px 25px; border-radius: 16px; background: rgba(0,0,0,0.5); border: 1px solid var(--border); transition: 0.3s; gap: 20px;}
+        .track-num { width: 28px; color: var(--accent); font-weight: 900; font-size: 1.3rem;}
+        .track-info { flex: 1; font-size: 1.2rem; font-weight: 600; color: #fff; line-height: 1.4;}
+        .track-actions { display: flex; gap: 10px; }
+        .t-btn { padding: 10px 20px; border-radius: 500px; border: 2px solid rgba(255,255,255,0.2); background: transparent; color: #fff; font-weight: 700; cursor: pointer; transition: 0.2s; font-size: 1rem;}
+        .t-btn:hover { border-color: #fff; background: rgba(255,255,255,0.1); }
+        .track-row.correct { background: rgba(29, 185, 84, 0.1); border-color: rgba(29, 185, 84, 0.3); }
+        .track-row.correct .t-btn { display: none; }
+        .track-row.correct::after { content: '\f00c VERIFIED'; font-family: "Font Awesome 6 Free"; font-weight: 900; color: var(--accent); font-size: 1rem; letter-spacing: 1px;}
+        .track-row.incorrect { animation: shake 0.4s ease; border-color: var(--incorrect); background: rgba(229, 9, 20, 0.1); }
+
+        /* CHAT */
+        .chat-container { display: flex; flex-direction: column; gap: 15px; margin-top: 15px; background: rgba(0,0,0,0.5); padding: 25px; border-radius: 20px; border: 1px solid var(--border);}
+        .msg { padding: 15px 20px; border-radius: 16px; max-width: 85%; font-size: 1.1rem; line-height: 1.5; text-align: left; position: relative;}
+        .msg.friend { background: rgba(255,255,255,0.1); align-self: flex-start; border-bottom-left-radius: 4px; color: #fff; border: 1px solid rgba(255,255,255,0.05); }
+        .msg.you { background: var(--accent); color: #000; align-self: flex-end; border-bottom-right-radius: 4px; display: none; font-weight: 700; box-shadow: 0 5px 15px var(--accent-glow);}
+        .chat-options { display: flex; flex-direction: column; gap: 10px; }
+        .chat-option { padding: 15px; background: rgba(255,255,255,0.05); border-radius: 12px; cursor: pointer; text-align: left; color: #fff; font-weight: 600; border: 1px solid var(--border); transition: 0.3s;}
+        .chat-option:hover { background: rgba(255,255,255,0.1); transform: translateX(5px);}
+
+        /* THE ARENA (3D FLIP) */
+        .arena-grid { display: flex; gap: 30px; justify-content: center; flex-wrap: wrap;}
+        .arena-card { width: 250px; height: 350px; perspective: 1000px; cursor: pointer; }
+        .card-inner { width: 100%; height: 100%; transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275); transform-style: preserve-3d; position: relative; border-radius: 24px; box-shadow: 0 20px 40px rgba(0,0,0,0.6);}
+        .arena-card.flipped .card-inner { transform: rotateY(180deg); }
+        .card-front, .card-back { position: absolute; width: 100%; height: 100%; backface-visibility: hidden; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px; text-align: center; border-radius: 24px; border: 1px solid var(--border); }
+        .card-front { background: rgba(255,255,255,0.05); font-size: 4rem; color: var(--accent); }
+        .card-back { background: var(--accent); transform: rotateY(180deg); color: #000; border: none;}
+        .card-back h3 { color: #000; font-weight: 900; font-family: var(--font-display); font-size: 1.8rem; margin-bottom: 10px;}
+        .card-back p { color: rgba(0,0,0,0.8); font-weight: 600; font-size: 1rem; line-height: 1.5; margin: 0;}
+
+        @keyframes shake { 0%, 100% { transform: translateX(0); } 20%, 60% { transform: translateX(-5px); } 40%, 80% { transform: translateX(5px); } }
+
+        /* --- ASIDE PANELS --- */
+        .side-panel {
+            position: fixed; top: 0; right: -550px; width: 500px; height: calc(100vh - var(--player-height) + 10px);
+            background: #0b0d14; border-left: 1px solid var(--border); z-index: 9999; transition: right 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+            display: flex; flex-direction: column; box-shadow: -30px 0 80px rgba(0,0,0,0.9);
+        }
+        .side-panel.open { right: 0; }
+        #vocab-sidebar { right: auto; left: -550px; border-left: none; border-right: 1px solid var(--border); transition: left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);}
+        #vocab-sidebar.open { left: 0; }
+        
+        .sp-header { display: flex; justify-content: space-between; align-items: center; padding: 24px 32px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .sp-title { font-size: 1.2rem; font-weight: 800; color: #fff; display: flex; align-items: center; gap: 12px; text-transform: uppercase;}
+        
+        .close-aside { background: rgba(255,255,255,0.05); border: none; color: #fff; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; transition: 0.3s;}
+        .close-aside:hover { background: rgba(229, 9, 20, 0.2); color: var(--incorrect); }
+
+        .wb-content { flex: 1; padding: 40px; outline: none; color: var(--accent); font-family: var(--font-code); font-size: 1.3rem; resize: none; border: none; background: transparent; line-height: 1.8;}
+        .wb-content::placeholder { color: rgba(255,255,255,0.2); font-family: var(--font-body); font-weight: 500;}
+
+        /* --- FOOTER / NAV BAR (FIXED) --- */
+        .nav-bar {
+            position: fixed; bottom: 0; left: 0; right: 0;
+            flex-shrink: 0; height: 100px; padding: 0 50px;
+            background: rgba(8, 10, 15, 0.95); border-top: 1px solid rgba(255,255,255,0.05);
+            display: flex; align-items: center; justify-content: space-between; z-index: 999;
+        }
+        
+        .skip-warning { color: var(--incorrect); font-weight: 800; font-size: 0.95rem; margin-right: 20px; display: none; animation: pulse-text 1.5s infinite; text-transform: uppercase;}
+        @keyframes pulse-text { 0%, 100% { opacity: 0.5; } 50% { opacity: 1; } }
+
+        @media (max-width: 850px) {
+            h1 { font-size: 3rem; } h2 { font-size: 1.8rem; }
+            .header, .nav-bar { padding: 0 20px; height: 80px; }
+            main { padding: 30px 15px 120px 15px;}
+            .glass-panel { padding: 30px 20px; border-radius: 20px;}
+            .side-panel { width: 100%; right: -100%; }
+            #vocab-sidebar { left: -100%; }
+            .btn { padding: 12px 24px; font-size: 1rem; }
+            .nav-bar .btn { width: auto; }
+            .error-sentence { font-size: 1.5rem; word-spacing: 4px;}
+            .highlight-zone { font-size: 1.2rem; padding: 25px;}
+        }
+    </style>
+</head>
+<body>
+
+    <div class="ambient-bg"></div>
+    <div class="ambient-orbs">
+        <div class="orb orb-1"></div>
+        <div class="orb orb-2"></div>
+    </div>
+
+    <!-- Header -->
+    <header class="header">
+        <div class="logo"><i class="fa-solid fa-moon" style="color:var(--accent); margin-right:8px;"></i> WOLF LABS <span>|</span> LIFESTYLE</div>
+        <div class="controls">
+            <button class="icon-btn" onclick="Engine.toggleWhiteboard()" title="Live Whiteboard"><i class="fa-solid fa-pen-nib"></i></button>
+            <button class="icon-btn" onclick="Engine.toggleFullscreen()" title="Fullscreen Mode"><i class="fa-solid fa-expand"></i></button>
+        </div>
+        <div class="progress-container"><div class="progress-bar" id="progressBar"></div></div>
+    </header>
+
+    <!-- Main Container -->
+    <main id="main-container">
+        
+        <!-- SCENE 0: GUIDE -->
+        <section class="step active" id="step-0">
+            <div class="glass-panel" style="max-width: 850px; margin: 0 auto;">
+                <h2><i class="fa-solid fa-user-shield" style="color:var(--accent-gold);"></i> Teacher Guide: Protocol V3.0</h2>
+                <div style="border-left: 4px solid var(--accent-gold); padding-left: 30px; margin: 30px 0; background: rgba(255,255,255,0.02); padding-top: 25px; padding-bottom: 25px; border-radius: 0 16px 16px 0;">
+                    <p style="font-size:1.2rem;"><strong>Topic:</strong> Shopping at the Supermarket.</p>
+                    <p style="font-size:1.2rem;"><strong>Target Level:</strong> A1 (Beginner).</p>
+                    <p style="font-size:1.2rem;"><strong>Methodology:</strong> The original video is 16 mins long (too dense). We sliced it into 3 micro-clips (40s each).</p>
+                    <p style="font-size:1.2rem; margin-top: 20px; color: var(--text-dim);"><strong>Engine Rules:</strong> 80% Speaking time. Let the student operate the Syntax Builders. Auto-Solve will trigger after 3 errors.</p>
+                </div>
+                <button class="btn btn-accent" style="margin-top:10px; width: 100%;" onclick="Engine.unlockPrompt('p0')">INITIALIZE EXPERIENCE</button>
+                <div class="speaking-hub" id="p0" style="display:none;"><p>Teacher: Welcome the student. Ask: "Do you like going to the supermarket?"</p></div>
+            </div>
+        </section>
+
+        <!-- SCENE 1: HERO -->
+        <section class="step" id="step-1">
+            <div class="glass-panel" style="text-align: center; background: transparent; border: none; box-shadow: none; padding: 0;">
+                <div class="dual-panel" style="align-items: center;">
+                    <div style="flex: 1.2; text-align: left;">
+                        <span class="code-tag">A1 BEGINNER | VOCABULARY</span>
+                        <h1 style="font-size: 5rem; margin-top: 10px;">Supermarket<br><span style="color: var(--accent);">Survival</span></h1>
+                        <p style="font-size: 1.3rem;">Learn the basic words and actions to survive a trip to the supermarket in English.</p>
+                        <button class="btn btn-accent" style="margin-top: 30px;" onclick="Engine.unlockPrompt('p1')"><i class="fa-solid fa-play"></i> Enter the Lesson</button>
+                    </div>
+                    <div style="flex: 0.8;">
+                        <div style="background: rgba(25, 30, 40, 0.8); padding: 50px; border-radius: 32px; border: 1px solid var(--border); text-align: center; box-shadow: 0 20px 50px rgba(0,0,0,0.5);">
+                            <i class="fa-solid fa-shopping-cart" style="font-size: 5rem; color: var(--accent); margin-bottom: 30px;"></i>
+                            <h3 style="color: #fff; font-size: 2.2rem; font-family: var(--font-display);">Food Shop</h3>
+                            <p style="font-size: 1.1rem; margin:0; color: var(--text-dim);">Focus: Present Continuous</p>
+                        </div>
+                        <div class="speaking-hub" id="p1" style="display:none; margin-top: 20px;">
+                            <p>What is your definition of a perfect "Day Out"?</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 2: VIBE CHECK -->
+        <section class="step" id="step-2">
+            <div class="glass-panel">
+                <div class="split-layout items-center">
+                    <div>
+                        <h2><i class="fa-solid fa-compass"></i> Shopping Style</h2>
+                        <p style="font-size: 1.3rem; margin-bottom: 30px;">Where do you prefer to buy your food?</p>
+                        <div class="choice-grid">
+                            <div class="choice-card" onclick="Engine.selectCard(this, '.choice-grid', 'p2')">
+                                <i class="fa-solid fa-shop"></i>
+                                <h3 style="color: #fff;">Local Market</h3>
+                                <p style="font-size: 1rem; color: var(--text-dim); margin:0;">Fresh food, open air.</p>
+                            </div>
+                            <div class="choice-card" onclick="Engine.selectCard(this, '.choice-grid', 'p2')">
+                                <i class="fa-solid fa-store"></i>
+                                <h3 style="color: #fff;">Big Supermarket</h3>
+                                <p style="font-size: 1rem; color: var(--text-dim); margin:0;">Everything in one place.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="speaking-hub" id="p2" style="display:none;">
+                        <p>Explain your choice. Why do you prefer this place?</p>
+                        <div class="speaking-starters-container">
+                            <span class="speaking-starter" onclick="this.classList.toggle('active')">I prefer the market because...</span>
+                            <span class="speaking-starter" onclick="this.classList.toggle('active')">I like the supermarket because...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 3: SLIDER -->
+        <section class="step" id="step-3">
+            <div class="glass-panel" style="text-align: center;">
+                <h2><i class="fa-solid fa-arrows-left-right"></i> Where Do You Stand?</h2>
+                <p style="font-size: 1.2rem; margin-bottom: 30px;">Move the slider based on your opinion.</p>
+                <div class="highlight-zone" style="border-color: var(--accent); background: rgba(29, 185, 84, 0.05); padding: 40px;">
+                    "Shopping for food online is better than going to the supermarket."
+                </div>
+                <div class="slider-container" style="margin-top: 50px;">
+                    <input type="range" min="0" max="100" value="50" id="standSlider1" oninput="Engine.unlockPrompt('p3_new')">
+                    <div class="slider-labels" style="margin-top: 20px;">
+                        <span style="color: var(--incorrect);">I completely disagree</span>
+                        <span style="color: var(--correct);">I completely agree</span>
+                    </div>
+                </div>
+                <div class="speaking-hub" id="p3_new" style="display:none; text-align:left;">
+                    <p>Why did you choose that position? Do you use apps to buy food?</p>
+                    <div class="speaking-starters-container">
+                        <span class="speaking-starter" onclick="this.classList.toggle('active')">I like buying online because...</span>
+                        <span class="speaking-starter" onclick="this.classList.toggle('active')">I prefer going to the store because...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 4: VOCAB 1 -->
+        <section class="step" id="step-4">
+            <div class="glass-panel">
+                <h2><i class="fa-solid fa-book-open"></i> Core Lexicon 1</h2>
+                <p>Click the highlighted words to open the Dictionary Sidebar.</p>
+                <div class="highlight-zone" style="text-align: left;">
+                    When I go to the supermarket, I take a <span class="vocab-word" onclick="Engine.openVocab('basket')">basket</span> for small things, or a <span class="vocab-word" onclick="Engine.openVocab('trolley')">trolley</span> for many things.<br><br>
+                    I walk down the <span class="vocab-word" onclick="Engine.openVocab('aisle')">aisle</span> and look at the products on the <span class="vocab-word" onclick="Engine.openVocab('shelf')">shelf</span>.
+                </div>
+                <div class="speaking-hub">
+                    <p>Do you usually take a basket or a trolley? Do you buy a lot of things?</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 5: BUILDER 1 -->
+        <section class="step" id="step-5">
+            <div class="glass-panel" style="text-align:center;">
+                <h2><i class="fa-solid fa-hammer"></i> Syntax Builder 1</h2>
+                <p style="font-size: 1.3rem; margin-bottom: 30px;">Build an affirmative sentence about what he is doing.</p>
+                <div class="drop-zone" id="dz1" data-attempts="0"></div>
+                <div class="word-bank" id="wb1"></div>
+                <div class="speaking-hub" id="p5" style="display:none; text-align:left;">
+                    <p>Good! "Is pushing" shows the action is happening now.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 6: PRE-VIDEO 1 -->
+        <section class="step" id="step-6">
+            <div style="text-align: center;">
+                <h2><i class="fa-solid fa-eye"></i> Pre-Video Prediction</h2>
+                <div class="highlight-zone" style="font-size: 1.5rem; padding: 40px; border-color: var(--accent);">
+                    We are going to watch a man in a supermarket in the UK.<br>In your country, do you use coins to unlock the supermarket trolley?
+                </div>
+                <button class="btn btn-accent" style="margin-top: 20px;" onclick="this.style.display='none'; Engine.unlockPrompt('p6')">Share Opinion</button>
+                <div class="speaking-hub" id="p6" style="display:none; text-align:left;">
+                    <p>Let's watch the first 40 seconds.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 7: VIDEO 1 -->
+        <section class="step" id="step-7">
+            <div style="width: 100%; text-align: center;">
+                <h2 style="font-size: 3rem; justify-content: center;"><i class="fa-brands fa-youtube" style="color: #ff0000;"></i> Clip 1: The Basics</h2>
+                <p style="font-size: 1.2rem; margin-bottom: 20px;">Watch this 40-second clip. Pay attention to the items.</p>
+                <div class="video-wrapper">
+                    <!-- 1:21 to 2:03 -->
+                    <iframe src="https://www.youtube.com/embed/xD2IWnl7I3g?start=81&end=123&rel=0&modestbranding=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 8: FACT CHECK 1 -->
+        <section class="step" id="step-8">
+            <div>
+                <h2><i class="fa-solid fa-list-check"></i> Comprehension Check</h2>
+                <p>Based on the video, verify the facts.</p>
+                <div class="glass-panel" style="padding: 30px;">
+                    <div class="track-row" id="row1">
+                        <div class="track-info">1. A basket has wheels and you push it.</div>
+                        <div class="track-actions">
+                            <button class="t-btn" onclick="Engine.checkTF(this, false, 8, 'p8')">True</button>
+                            <button class="t-btn" onclick="Engine.checkTF(this, true, 8, 'p8')">False</button>
+                        </div>
+                    </div>
+                    <div class="track-row" id="row2" style="margin-top:15px;">
+                        <div class="track-info">2. In America, they call a trolley a "shopping cart".</div>
+                        <div class="track-actions">
+                            <button class="t-btn" onclick="Engine.checkTF(this, true, 8, 'p8')">True</button>
+                            <button class="t-btn" onclick="Engine.checkTF(this, false, 8, 'p8')">False</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="speaking-hub" id="p8" style="display:none;">
+                    <p>Correct! You carry a basket and push a trolley.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 9: GRAMMAR ENGINE (Present Continuous) -->
+        <section class="step" id="step-9">
+            <div class="glass-panel" style="width: 100%;">
+                <h2 style="text-align:center;"><i class="fa-solid fa-gears"></i> Grammar Engine: Present Continuous</h2>
+                <p style="text-align:center; font-size:1.2rem;">To talk about actions happening <strong>NOW</strong>.</p>
+                <div class="dual-panel" style="margin-top: 40px;">
+                    <div style="background: rgba(255,255,255,0.03); padding: 40px; border-radius: 20px; border: 1px solid var(--border); text-align: center;">
+                        <h3 style="color:#fff; font-size:1.5rem;"><i class="fa-solid fa-person-running"></i> Happening NOW</h3>
+                        <p style="font-size: 1.5rem; color:var(--text-dim); margin-top: 15px;">He <span style="color: var(--accent);">is pushing</span> the trolley.</p>
+                    </div>
+                    <div style="background: rgba(29, 185, 84, 0.05); padding: 40px; border-radius: 20px; border: 1px solid var(--accent); text-align: center; box-shadow: inset 0 0 30px rgba(29,185,84,0.1);">
+                        <h3 style="color:var(--accent); font-size:1.5rem;"><i class="fa-solid fa-layer-group"></i> Structure</h3>
+                        <p style="font-size: 1.5rem; font-weight:800; color:var(--accent); margin-top: 15px;">Verb To Be + Verb(ing)</p>
+                        <p style="font-size: 1.2rem; color:var(--text-main); margin-top: 5px;">I <span style="color: var(--accent);">am</span> walk<span style="color: var(--accent);">ing</span>.</p>
+                    </div>
+                </div>
+                <div style="text-align:center; margin-top: 40px;">
+                    <button class="btn btn-accent" onclick="this.style.display='none'; Engine.unlockPrompt('p9')">I Understand</button>
+                </div>
+                <div class="speaking-hub" id="p9" style="display:none;">
+                    <p>What are you doing right now?</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 10: ERROR DETECTION 1 -->
+        <section class="step" id="step-10">
+            <div class="glass-panel" style="text-align:center;">
+                <h2><i class="fa-solid fa-bug"></i> System Debug 1</h2>
+                <p>Find the grammar mistake. Click the wrong word.</p>
+                <div class="highlight-zone">
+                    <div class="error-sentence" data-attempts="0">
+                        <span class="error-word" onclick="Engine.genericCorrect(this, false, null, 10)">He</span>
+                        <span class="error-word" onclick="Engine.genericCorrect(this, true, null, 10, 'is pushing', 'p10')">push</span>
+                        <span class="error-word" onclick="Engine.genericCorrect(this, false, null, 10)">the</span>
+                        <span class="error-word" onclick="Engine.genericCorrect(this, false, null, 10)">trolley.</span>
+                    </div>
+                </div>
+                <div class="speaking-hub" id="p10" style="display:none; text-align:left;">
+                    <p>Brilliant! We need "is" and "-ing" for actions happening now.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 11: SPEAKING (Actions) -->
+        <section class="step" id="step-11">
+            <div class="glass-panel">
+                <h2><i class="fa-solid fa-person-walking"></i> Happening Now</h2>
+                <div class="speaking-hub" style="margin: 0;">
+                    <p>What are you doing right now? What are your family members doing in the other room?</p>
+                    <div class="speaking-starters-container">
+                        <span class="speaking-starter" onclick="this.classList.toggle('active')">I am sitting and...</span>
+                        <span class="speaking-starter" onclick="this.classList.toggle('active')">My mother is...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 12: VOCAB 2 (Fruits) -->
+        <section class="step" id="step-12">
+            <div class="glass-panel">
+                <h2><i class="fa-solid fa-book-open"></i> Core Lexicon 2: Fruits</h2>
+                <p>Click the highlighted words to open the Dictionary.</p>
+                <div class="highlight-zone" style="text-align: left;">
+                    In the fresh produce section, you can buy <span class="vocab-word" onclick="Engine.openVocab('apples')">apples</span> or <span class="vocab-word" onclick="Engine.openVocab('grapes')">grapes</span>.<br><br>
+                    Some people don't like the outside of the fruit, so they <span class="vocab-word" onclick="Engine.openVocab('peel')">peel</span> it to remove the <span class="vocab-word" onclick="Engine.openVocab('skin')">skin</span>.
+                </div>
+                <div class="speaking-hub">
+                    <p>Do you eat the skin of an apple? What about a kiwi?</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 13: BUILDER 2 -->
+        <section class="step" id="step-13">
+            <div class="glass-panel" style="text-align:center;">
+                <h2><i class="fa-solid fa-hammer"></i> Syntax Builder 2</h2>
+                <p style="font-size: 1.3rem; margin-bottom: 30px;">Build a sentence about a fruit routine.</p>
+                <div class="drop-zone" id="dz2" data-attempts="0"></div>
+                <div class="word-bank" id="wb2"></div>
+                <div class="speaking-hub" id="p13" style="display:none; text-align:left;">
+                    <p>Read it aloud. What is your favorite fruit?</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 14: PRE-VIDEO 2 -->
+        <section class="step" id="step-14">
+            <div style="text-align: center;">
+                <h2><i class="fa-solid fa-eye"></i> Pre-Video Prediction</h2>
+                <div class="highlight-zone" style="font-size: 1.5rem; padding: 40px; border-color: var(--accent);">
+                    The next clip is about fruits.<br>What fruit do you think is the most popular in the UK?
+                </div>
+                <button class="btn btn-accent" style="margin-top: 20px;" onclick="this.style.display='none'; Engine.unlockPrompt('p14')">Share Opinion</button>
+                <div class="speaking-hub" id="p14" style="display:none; text-align:left;">
+                    <p>Let's watch and see what he buys.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 15: VIDEO 2 -->
+        <section class="step" id="step-15">
+            <div style="width: 100%; text-align: center;">
+                <h2 style="font-size: 3rem; justify-content: center;"><i class="fa-brands fa-youtube" style="color: #ff0000;"></i> Clip 2: Fresh Produce</h2>
+                <p style="font-size: 1.2rem; margin-bottom: 20px;">Watch this 50-second clip. What fruits does he show?</p>
+                <div class="video-wrapper">
+                    <!-- 11:54 to 12:45 -->
+                    <iframe src="https://www.youtube.com/embed/xD2IWnl7I3g?start=714&end=765&rel=0&modestbranding=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 16: FACT CHECK 2 -->
+        <section class="step" id="step-16">
+            <div>
+                <h2><i class="fa-solid fa-list-check"></i> Verification 1/2</h2>
+                <p>Based on the video, is this true?</p>
+                <div class="glass-panel" style="padding: 30px;">
+                    <div class="track-row" id="row3">
+                        <div class="track-info">1. The verb you use to remove the skin of an orange is "peel".</div>
+                        <div class="track-actions">
+                            <button class="t-btn" onclick="Engine.checkTF(this, true, 16, 'p16')">True</button>
+                            <button class="t-btn" onclick="Engine.checkTF(this, false, 16, 'p16')">False</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="speaking-hub" id="p16" style="display:none;">
+                    <p>Correct! You peel an orange, a banana, or a tangerine.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 17: CHAT SCENARIO -->
+        <section class="step" id="step-17">
+            <div class="glass-panel">
+                <h2><i class="fa-solid fa-message"></i> Live Chat Scenario</h2>
+                <p>Your friend is at the supermarket.</p>
+                <div class="chat-container">
+                    <div class="msg friend">"Hey! I am at the store. Do you need anything?"</div>
+                    <div class="chat-options" id="chat1" data-attempts="0">
+                        <div class="chat-option" onclick="Engine.handleChat(this, true, 'chat1', 17, 'p17')">Yes! I need some apples and a bottle of milk.</div>
+                        <div class="chat-option" onclick="Engine.handleChat(this, false, 'chat1', 17)">Yes! I needs some apples and a bottle of milk.</div>
+                    </div>
+                </div>
+                <div class="speaking-hub" id="p17" style="display:none;">
+                    <p>Tell your teacher 3 things you need from the supermarket this week.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 18: ERROR DETECTION 2 -->
+        <section class="step" id="step-18">
+            <div class="glass-panel" style="text-align:center;">
+                <h2><i class="fa-solid fa-bug"></i> System Debug 2</h2>
+                <p>Find the grammar mistake. Click the wrong word.</p>
+                <div class="highlight-zone">
+                    <div class="error-sentence" data-attempts="0">
+                        <span class="error-word" onclick="Engine.genericCorrect(this, false, null, 18)">I</span>
+                        <span class="error-word" onclick="Engine.genericCorrect(this, true, null, 18, 'want', 'p18')">wants</span>
+                        <span class="error-word" onclick="Engine.genericCorrect(this, false, null, 18)">some</span>
+                        <span class="error-word" onclick="Engine.genericCorrect(this, false, null, 18)">apples,</span>
+                        <span class="error-word" onclick="Engine.genericCorrect(this, false, null, 18)">please.</span>
+                    </div>
+                </div>
+                <div class="speaking-hub" id="p18" style="display:none; text-align:left;">
+                    <p>Correct! "I want", but "He wants". Say the correct sentence.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 19: SPEAKING (What do you need?) -->
+        <section class="step" id="step-19">
+            <div class="glass-panel">
+                <h2><i class="fa-solid fa-cart-shopping"></i> Shopping List</h2>
+                <div class="speaking-hub" style="margin: 0;">
+                    <p>Imagine you are going to the supermarket now. What do you need to buy?</p>
+                    <div class="speaking-starters-container">
+                        <span class="speaking-starter" onclick="this.classList.toggle('active')">I need some...</span>
+                        <span class="speaking-starter" onclick="this.classList.toggle('active')">I want to buy a...</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 20: VOCAB 3 (Checkout) -->
+        <section class="step" id="step-20">
+            <div class="glass-panel">
+                <h2><i class="fa-solid fa-book-open"></i> Core Lexicon 3: Paying</h2>
+                <p>Click the highlighted words to open the Dictionary.</p>
+                <div class="highlight-zone" style="text-align: left;">
+                    When you finish shopping, you go to the <span class="vocab-word" onclick="Engine.openVocab('checkout')">checkout</span> counter.<br><br>
+                    You pay with the money in your <span class="vocab-word" onclick="Engine.openVocab('wallet')">wallet</span> and they give you a paper <span class="vocab-word" onclick="Engine.openVocab('receipt')">receipt</span>.<br><br>
+                    You carry your food home in a <span class="vocab-word" onclick="Engine.openVocab('bag')">bag</span>.
+                </div>
+                <div class="speaking-hub">
+                    <p>Do you usually pay with cash from your wallet or with a card/phone?</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 21: BUILDER 3 -->
+        <section class="step" id="step-21">
+            <div class="glass-panel" style="text-align:center;">
+                <h2><i class="fa-solid fa-hammer"></i> Syntax Builder 3</h2>
+                <p style="font-size: 1.3rem; margin-bottom: 30px;">Build a sentence about a need.</p>
+                <div class="drop-zone" id="dz3" data-attempts="0"></div>
+                <div class="word-bank" id="wb3"></div>
+                <div class="speaking-hub" id="p21" style="display:none; text-align:left;">
+                    <p>Great!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 22: PRE-VIDEO 3 -->
+        <section class="step" id="step-22">
+            <div style="text-align: center;">
+                <h2><i class="fa-solid fa-eye"></i> Pre-Video Prediction</h2>
+                <div class="highlight-zone" style="font-size: 1.5rem; padding: 40px; border-color: var(--accent);">
+                    The final clip is about paying.<br>Do you think he will use a plastic bag or a reusable bag?
+                </div>
+                <button class="btn btn-accent" style="margin-top: 20px;" onclick="this.style.display='none'; Engine.unlockPrompt('p22')">Share Opinion</button>
+                <div class="speaking-hub" id="p22" style="display:none; text-align:left;">
+                    <p>Let's watch the checkout process.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 23: VIDEO 3 -->
+        <section class="step" id="step-23">
+            <div style="width: 100%; text-align: center;">
+                <h2 style="font-size: 3rem; justify-content: center;"><i class="fa-brands fa-youtube" style="color: #ff0000;"></i> Clip 3: The Checkout</h2>
+                <p style="font-size: 1.2rem; margin-bottom: 20px;">Watch the final clip. How does he carry his items home?</p>
+                <div class="video-wrapper">
+                    <!-- 14:18 to 15:20 -->
+                    <iframe src="https://www.youtube.com/embed/xD2IWnl7I3g?start=858&end=920&rel=0&modestbranding=1" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 24: FACT CHECK 3 -->
+        <section class="step" id="step-24">
+            <div>
+                <h2><i class="fa-solid fa-list-check"></i> Verification 2/2</h2>
+                <p>Based on the final clip.</p>
+                <div class="glass-panel" style="padding: 30px;">
+                    <div class="track-row" id="row4">
+                        <div class="track-info">1. He used a plastic bag that you throw away.</div>
+                        <div class="track-actions">
+                            <button class="t-btn" onclick="Engine.checkTF(this, false, 24)">True</button>
+                            <button class="t-btn" onclick="Engine.checkTF(this, true, 24, 'p24')">False</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="speaking-hub" id="p24" style="display:none;">
+                    <p>Correct! He used a "bag for life" (a reusable bag). Do you use bags for life?</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 25: GRAMMAR 2 (Requests) -->
+        <section class="step" id="step-25">
+            <div class="glass-panel" style="width: 100%;">
+                <h2 style="text-align:center;"><i class="fa-solid fa-gears"></i> Grammar Engine: Requests</h2>
+                <p style="text-align:center; font-size:1.2rem;">When we want something at the store, we use "Can I have...?"</p>
+                <div class="dual-panel" style="margin-top: 40px;">
+                    <div style="background: rgba(29, 185, 84, 0.05); padding: 40px; border-radius: 20px; border: 1px solid var(--accent); text-align: center; box-shadow: inset 0 0 30px rgba(29,185,84,0.1);">
+                        <h3 style="color:var(--accent); font-size:1.5rem;">Polite Requests</h3>
+                        <p style="font-size: 1.5rem; font-weight:800; color:#fff; margin-top: 15px;"><span style="color: var(--accent);">Can I have</span> a bag, please?</p>
+                    </div>
+                    <div style="background: rgba(229, 9, 20, 0.05); padding: 40px; border-radius: 20px; border: 1px solid var(--incorrect); text-align: center;">
+                        <h3 style="color:var(--incorrect); font-size:1.5rem;">Rude/Direct</h3>
+                        <p style="font-size: 1.5rem; font-weight:800; color:var(--text-dim); margin-top: 15px; text-decoration: line-through;">Give me a bag.</p>
+                        <p style="font-size: 1rem; color:var(--text-dim);">(Sounds angry!)</p>
+                    </div>
+                </div>
+                <div style="text-align:center; margin-top: 40px;">
+                    <button class="btn btn-accent" onclick="this.style.display='none'; Engine.unlockPrompt('p25')">I Understand</button>
+                </div>
+                <div class="speaking-hub" id="p25" style="display:none;">
+                    <p>Practice: Ask your teacher for a cup of coffee politely.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 26: BUILDER 4 (Requests) -->
+        <section class="step" id="step-26">
+            <div class="glass-panel" style="text-align:center;">
+                <h2><i class="fa-solid fa-hammer"></i> Syntax Builder 4</h2>
+                <p style="font-size: 1.3rem; margin-bottom: 30px;">Build a polite request for the cashier.</p>
+                <div class="drop-zone" id="dz4" data-attempts="0"></div>
+                <div class="word-bank" id="wb4"></div>
+                <div class="speaking-hub" id="p26" style="display:none; text-align:left;">
+                    <p>Read it aloud politely. What else can you ask for? (e.g., a paper bag, a box).</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 27: ERROR DETECTION 3 -->
+        <section class="step" id="step-27">
+            <div class="glass-panel" style="text-align:center;">
+                <h2><i class="fa-solid fa-bug"></i> System Debug 3</h2>
+                <p>Find the grammar mistake. Click the wrong word.</p>
+                <div class="highlight-zone" style="margin-top: 40px;">
+                    <div class="error-sentence" data-attempts="0">
+                        <span class="error-word" onclick="Engine.checkError(this, true, null, 27, 'Can I have', 'p27')">Give me</span>
+                        <span class="error-word" onclick="Engine.checkError(this, false, null, 27)">the</span>
+                        <span class="error-word" onclick="Engine.checkError(this, false, null, 27)">receipt,</span>
+                        <span class="error-word" onclick="Engine.checkError(this, false, null, 27)">please.</span>
+                    </div>
+                </div>
+                <div class="speaking-hub" id="p27" style="display:none; text-align:left;">
+                    <p>Correct! "Give me" is too direct. Use "Can I have". Say it aloud.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 28: SPEAKING (Requests) -->
+        <section class="step" id="step-28">
+            <div class="glass-panel">
+                <h2><i class="fa-solid fa-comments"></i> Polite Practice</h2>
+                <div class="speaking-hub" style="margin: 0;">
+                    <p>Imagine you are at a restaurant. Ask the waiter for the menu, some water, and the bill.</p>
+                    <div class="speaking-starters-container">
+                        <span class="speaking-starter" onclick="this.classList.toggle('active')">Can I have the menu, please?</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 29: DILEMMA 1 -->
+        <section class="step" id="step-29">
+            <div class="glass-panel">
+                <div class="split-layout items-center">
+                    <div>
+                        <h2><i class="fa-solid fa-scale-balanced"></i> The Dilemma</h2>
+                        <p style="font-size: 1.3rem; margin-bottom: 30px;">You are at the checkout. All your food is scanned. But... you forgot your wallet at home!</p>
+                        <div class="choice-grid">
+                            <div class="choice-card" onclick="Engine.selectCard(this, '.choice-grid', 'p29')">
+                                <i class="fa-solid fa-person-running"></i>
+                                <h3 style="color: #fff;">Run Home</h3>
+                                <p style="font-size: 1rem; color: var(--text-dim); margin:0;">Tell the cashier to wait.</p>
+                            </div>
+                            <div class="choice-card" onclick="Engine.selectCard(this, '.choice-grid', 'p29')">
+                                <i class="fa-solid fa-mobile-screen-button"></i>
+                                <h3 style="color: #fff;">Use Phone</h3>
+                                <p style="font-size: 1rem; color: var(--text-dim); margin:0;">Try Apple/Google Pay.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="speaking-hub" id="p29" style="opacity: 0.3; pointer-events: none;">
+                        <p>Has this ever happened to you in real life?</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 30: DILEMMA 2 -->
+        <section class="step" id="step-30">
+            <div class="glass-panel">
+                <div class="split-layout items-center">
+                    <div>
+                        <h2><i class="fa-solid fa-people-arrows"></i> Dilemma 2</h2>
+                        <p style="font-size: 1.3rem; margin-bottom: 30px;">The supermarket is very busy.</p>
+                        <div class="choice-grid">
+                            <div class="choice-card" onclick="Engine.selectCard(this, '.choice-grid', 'p30')">
+                                <i class="fa-solid fa-robot"></i>
+                                <h3 style="color: #fff;">Self-Checkout</h3>
+                                <p style="font-size: 1rem; color: var(--text-dim); margin:0;">Do it yourself. Fast.</p>
+                            </div>
+                            <div class="choice-card" onclick="Engine.selectCard(this, '.choice-grid', 'p30')">
+                                <i class="fa-solid fa-user-tie"></i>
+                                <h3 style="color: #fff;">Real Cashier</h3>
+                                <p style="font-size: 1rem; color: var(--text-dim); margin:0;">Wait in line, but easier.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="speaking-hub" id="p30" style="opacity: 0.3; pointer-events: none;">
+                        <p>Which one do you prefer to use?</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 31: MEMORY GAME -->
+        <section class="step" id="step-31">
+            <div class="glass-panel" style="text-align: center;">
+                <h2><i class="fa-solid fa-brain"></i> Memory Simulator</h2>
+                <p>Memorize the key vocabulary for 3 seconds.</p>
+                <div class="highlight-zone" id="mem-seq" style="font-size: 1.8rem; font-weight:800; color:var(--accent);">BASKET - TROLLEY - RECEIPT - WALLET</div>
+                <button class="btn btn-accent" id="mem-start" onclick="Engine.startMemoryGame('BASKET|TROLLEY|RECEIPT|WALLET')" style="margin-top: 30px;"><i class="fa-solid fa-play"></i> Start Test</button>
+                <div id="mem-test" style="display:none; margin-top:30px;">
+                    <p style="font-size:1.2rem; color:var(--text-main);">Click the words in the exact sequence.</p>
+                    <div style="display: flex; gap: 15px; justify-content:center; margin-top: 20px; flex-wrap:wrap;">
+                        <button class="btn" style="border-color:var(--border);" onclick="Engine.checkMem(this, 'RECEIPT', 31, 'p31')">RECEIPT</button>
+                        <button class="btn" style="border-color:var(--border);" onclick="Engine.checkMem(this, 'BASKET', 31, 'p31')">BASKET</button>
+                        <button class="btn" style="border-color:var(--border);" onclick="Engine.checkMem(this, 'WALLET', 31, 'p31')">WALLET</button>
+                        <button class="btn" style="border-color:var(--border);" onclick="Engine.checkMem(this, 'TROLLEY', 31, 'p31')">TROLLEY</button>
+                    </div>
+                </div>
+                <div class="speaking-hub" id="p31" style="display:none; text-align: left;"><p>Well done. Let's move to the final arena!</p></div>
+            </div>
+        </section>
+
+        <!-- SCENE 32: ROLEPLAY PREP -->
+        <section class="step" id="step-32">
+            <div class="glass-panel">
+                <h2><i class="fa-solid fa-masks-theater"></i> Roleplay Setup</h2>
+                <p class="subtitle">Get ready. Use the vocabulary and "Can I have...?"</p>
+                <div class="split-layout" style="margin-top: 40px;">
+                    <div style="background: rgba(29, 185, 84, 0.1); border-top: 6px solid var(--accent); padding: 40px; border-radius: 20px;">
+                        <h3 style="font-size: 1.8rem; color: var(--accent); margin-bottom: 16px;">Role A: The Customer</h3>
+                        <p style="color: var(--text-main); font-size: 1.2rem; line-height: 1.6;">You are buying apples and milk. You need a bag, and you want the receipt. Be polite!</p>
+                    </div>
+                    <div style="background: rgba(212, 175, 55, 0.1); border-top: 6px solid var(--accent-gold); padding: 40px; border-radius: 20px;">
+                        <h3 style="font-size: 1.8rem; color: var(--accent-gold); margin-bottom: 16px;">Role B: The Cashier</h3>
+                        <p style="color: var(--text-main); font-size: 1.2rem; line-height: 1.6;">You work at the checkout. Tell the customer the price. Answer their questions.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 33: THE ARENA (ROLEPLAY SHOWDOWN) -->
+        <section class="step" id="step-33">
+            <div class="glass-panel" style="background: rgba(229, 9, 20, 0.1); border-color: rgba(229, 9, 20, 0.3);">
+                <div class="speaking-hub" style="background: transparent; border: none; text-align: center; box-shadow: none; padding: 80px;">
+                    <div style="display: inline-flex; justify-content: center; font-size: 1.2rem; font-weight: 900; color: var(--error-red); letter-spacing: 3px; margin-bottom: 30px;">THE ARENA • SHOWDOWN</div>
+                    <p style="font-size: 3rem; font-weight: 900; margin-bottom: 30px; color: var(--text-main); line-height: 1.2;">"Hello! That is 5 dollars, please."</p>
+                    <p style="font-weight: 700; color: var(--text-dim); font-size: 1.5rem;">Role A: Reply and ask for a bag!</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SCENE 34: FINAL PITCH -->
+        <section class="step" id="step-34">
+            <div>
+                <h2 style="text-align:center; font-size:3.5rem;"><i class="fa-solid fa-rocket"></i> The Final Pitch</h2>
+                <p style="text-align:center; font-size:1.3rem;">You have 60 seconds to plan a shopping list for a party.</p>
+                <div class="choice-grid" style="max-width: 800px; margin: 40px auto;" id="p34_c" data-attempts="0">
+                    <div class="choice-card" onclick="Engine.genericCorrect(this, false, 'p34_c', 34)"><h3 style="font-family:var(--font-body);"><i class="fa-solid fa-hand"></i> I need a minute.</h3></div>
+                    <div class="choice-card" onclick="Engine.genericCorrect(this, true, 'p34_c', 34, null, 'p34')"><h3 style="font-family:var(--font-body);"><i class="fa-solid fa-microphone"></i> Let's plan it!</h3></div>
+                </div>
+                <div class="speaking-hub" id="p34" style="display:none;"><p>Go! Tell your teacher 5 things you need to buy for a birthday party.</p></div>
+            </div>
+        </section>
+
+        <!-- SCENE 35: MISSION COMPLETE -->
+        <section class="step" id="step-35">
+            <div class="glass-panel" style="display: flex; flex-direction: column; align-items: center; text-align: center; padding: 120px 40px;">
+                <div style="width: 120px; height: 120px; background: var(--accent); border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-bottom: 40px; box-shadow: 0 0 50px rgba(29, 185, 84, 0.6);">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#000" stroke-width="3" style="width: 60px; height: 60px;"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </div>
+                <h1 style="font-size: 6rem;">Mission<br>Complete</h1>
+                <p class="subtitle" style="margin-top: 24px; font-size: 1.8rem; color: var(--accent);">Data Log Saved. See you next class.</p>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer / Navigation Bar -->
+    <nav class="nav-bar">
+        <button class="btn" style="background: rgba(255,255,255,0.05); color: #fff; border: 1px solid rgba(255,255,255,0.2);" id="ctrl-prev" onclick="Engine.prevStep()" disabled><i class="fa-solid fa-arrow-left"></i> BACK</button>
+        <div style="font-weight: 800; font-size: 1rem; color: var(--text-dim); letter-spacing: 2px;" id="step-counter">SCENE 1 / 36</div>
+        <div style="display:flex; align-items:center; gap: 15px;">
+             <div class="skip-warning" id="skip-warn" style="display:none; color: var(--incorrect); font-weight: 800; font-size: 0.95rem; text-transform: uppercase;">Exercise Locked! (Double-click to skip)</div>
+             <button class="btn btn-accent" id="ctrl-next" onclick="Engine.nextStep()">NEXT SCENE <i class="fa-solid fa-arrow-right"></i></button>
+        </div>
+    </nav>
+
+    <!-- Vocab Panel -->
+    <aside class="side-panel" id="vocab-sidebar" style="right: auto; left: -550px; border-left: none; border-right: 1px solid var(--border); transition: left 0.4s cubic-bezier(0.2, 0.8, 0.2, 1); box-shadow: 30px 0 80px rgba(0,0,0,0.8);">
+        <div class="sp-header">
+            <button class="btn" style="background: rgba(255,255,255,0.1); color: var(--text-main); border: none; padding: 10px 20px; border-radius: 12px; font-weight: 700; cursor: pointer;" onclick="Engine.closeVocab()">Close Dictionary</button>
+        </div>
+        <div id="asideContent"></div>
+    </aside>
+
+    <!-- Whiteboard Panel -->
+    <aside class="side-panel" id="teacher-board">
+        <div class="sp-header">
+            <span style="font-size: 1.2rem; font-weight: 800; color: var(--text-main); display: flex; align-items: center; gap: 12px;">
+                <i class="fa-solid fa-chalkboard" style="color:var(--accent);"></i> Teacher's Board
+            </span>
+            <div style="display:flex; gap:10px;">
+                <button class="btn" style="background: rgba(255,255,255,0.05); color:var(--text-main); border:none; padding: 8px 16px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;" onclick="document.getElementById('tb-textarea').value=''">Clear</button>
+                <button class="close-aside" style="position:static; width:30px; height:30px;" onclick="Engine.toggleWhiteboard()"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+        </div>
+        <textarea id="tb-textarea" style="flex: 1; padding: 40px; outline: none; color: var(--accent); font-family: var(--font-code); font-size: 1.3rem; resize: none; border: none; background: transparent; line-height: 1.8; text-shadow: 0 0 10px rgba(29,185,84,0.2);" placeholder="> Type grammar rules, vocabulary, or notes here...&#10;&#10;E.g.,&#10;He went to...&#10;He used to..."></textarea>
+    </aside>
+
+    <script>
+        /* =========================================
+           DATA & CONFIG
+        ========================================= */
+        const AppState = {
+            currentStep: 0,
+            totalSteps: 36, // Total number of step tags
+            lockedSteps: {
+                5: true, // Builder 1
+                8: true, // Fact Check 1
+                10: true, // Error Detect 1
+                12: true, // Builder 2
+                13: true, // Error Detect 2
+                16: true, // Fact Check 2
+                17: true, // Chat 1
+                18: true, // Error Detect 3
+                21: true, // Builder 3
+                24: true, // Fact Check 3
+                26: true, // Builder 4
+                27: true, // Error Detect 4
+                31: true, // Memory Game
+                34: true  // Final Pitch Choice
+            } 
+        };
+
+        const VocabDB = {
+            'basket': { def: 'A container with a handle that you carry to put items in.', ex: 'I only need a few things, so I took a basket.', speak: 'Do you usually use a basket or a trolley?' },
+            'trolley': { def: 'A large cart with wheels you push to carry many items.', ex: 'I put the milk in the trolley.', speak: 'Is it hard to push a trolley when it is full?' },
+            'aisle': { def: 'A passage between shelves in a supermarket.', ex: 'The pasta is in aisle 5.', speak: 'Do you know which aisle has the bread?' },
+            'shelf': { def: 'A flat board where items are placed in a store.', ex: 'The bread is on the top shelf.', speak: 'Can you reach the top shelf?' },
+            'skin': { def: 'The outside layer of a fruit.', ex: 'I do not eat the apple skin.', speak: 'Do you eat the skin of a kiwi?' },
+            'peel': { def: 'To remove the skin from a fruit or vegetable.', ex: 'Can you peel this orange for me?', speak: 'Do you peel your apples before eating?' },
+            'apples': { def: 'A round fruit with red or green skin.', ex: 'I bought three red apples.', speak: 'Do you prefer green or red apples?' },
+            'grapes': { def: 'Small green or purple fruits that grow in a bunch.', ex: 'These green grapes are very sweet.', speak: 'Do you like grapes?' },
+            'checkout': { def: 'The place where you pay for your items in a store.', ex: 'There is a long line at the checkout.', speak: 'Do you prefer self-checkout or a cashier?' },
+            'wallet': { def: 'A small case to keep money and credit cards.', ex: 'Oh no, I forgot my wallet at home!', speak: 'What color is your wallet?' },
+            'receipt': { def: 'A piece of paper showing what you bought and how much you paid.', ex: 'Can I have the receipt, please?', speak: 'Do you keep your receipts?' },
+            'bag': { def: 'A container made of paper or plastic to carry things.', ex: 'I brought my own bag for life.', speak: 'Do you buy plastic bags at the supermarket?' }
+        };
+
+        // Arrays exactly matching Drop Zone IDs
+        const SyntaxDB = {
+            'dz1': { target: ["He", "is", "pushing", "the", "trolley"], bank: "wb1", step: 5, errors: 0 },
+            'dz2': { target: ["I", "always", "peel", "my", "apples"], bank: "wb2", step: 12, errors: 0 },
+            'dz3': { target: ["I", "need", "a", "shopping", "basket"], bank: "wb3", step: 21, errors: 0 },
+            'dz4': { target: ["Can", "I", "have", "a", "receipt,", "please?"], bank: "wb4", step: 26, errors: 0 }
+        };
+
+        const Roles = [
+            "A person who loves extreme sports and roller coasters.",
+            "A tired parent who just wants to sleep on the beach.",
+            "A very boring tour guide at a museum."
+        ];
+
+        /* =========================================
+           ENGINE EXPORT FOR HTML EVENTS
+        ========================================= */
+        const Engine = {
+            updateUI() {
+                document.querySelectorAll('.step').forEach((step, index) => {
+                    if(index === AppState.currentStep) {
+                        step.classList.add('active');
+                    } else {
+                        step.classList.remove('active');
+                    }
+                });
+
+                const btnPrev = document.getElementById('ctrl-prev');
+                const btnNext = document.getElementById('ctrl-next');
+
+                if (btnPrev) btnPrev.disabled = AppState.currentStep === 0;
+                if (btnNext) btnNext.style.display = AppState.currentStep === AppState.totalSteps - 1 ? 'none' : 'flex';
+                
+                const stepCounter = document.getElementById('step-counter');
+                if(stepCounter) stepCounter.innerText = `SCENE ${AppState.currentStep + 1} / ${AppState.totalSteps}`;
+                
+                const pb = document.getElementById('progressBar');
+                if (pb) pb.style.width = `${(AppState.currentStep / (AppState.totalSteps - 1)) * 100}%`;
+
+                // Manage locks
+                const skipWarn = document.getElementById('skip-warn');
+                let isLocked = AppState.lockedSteps[AppState.currentStep] || false;
+                
+                if(btnNext && isLocked) {
+                    btnNext.style.opacity = "0.5";
+                    btnNext.onclick = () => { if(skipWarn) { skipWarn.style.display = 'block'; setTimeout(()=>skipWarn.style.display='none', 3000); } };
+                    btnNext.ondblclick = () => { AppState.lockedSteps[AppState.currentStep] = false; Engine.updateUI(); Engine.nextStep(); }; // Force Skip
+                } else if(btnNext) {
+                    btnNext.style.opacity = "1";
+                    btnNext.onclick = () => Engine.nextStep();
+                    btnNext.ondblclick = null;
+                    if(skipWarn) skipWarn.style.display = 'none';
+                }
+
+                document.getElementById('main-container').scrollTo(0, 0);
+            },
+
+            nextStep() {
+                if (AppState.currentStep < AppState.totalSteps - 1) { 
+                    AppState.currentStep++; 
+                    this.updateUI(); 
+                    this.closeVocab(); 
+                }
+            },
+
+            prevStep() {
+                if (AppState.currentStep > 0) { 
+                    AppState.currentStep--; 
+                    this.updateUI(); 
+                    this.closeVocab(); 
+                }
+            },
+
+            unlockPrompt(id) {
+                const prompt = document.getElementById(id);
+                if(prompt) {
+                    prompt.style.display = 'block';
+                    prompt.style.opacity = '1';
+                    prompt.style.pointerEvents = 'auto';
+                }
+            },
+
+            selectCard(card, groupSelector, promptId) {
+                const parent = card.closest('div').parentElement;
+                parent.querySelectorAll('.choice-card').forEach(el => {
+                    el.classList.remove('selected');
+                });
+                card.classList.add('selected');
+                if(promptId) this.unlockPrompt(promptId);
+            },
+
+            genericCorrect(element, isCorrect, containerId, stepNum, correctedText, promptId) {
+                const parent = element.parentElement;
+                let container = containerId ? document.getElementById(containerId) : parent;
+                if(!container) container = parent;
+                
+                let attempts = parseInt(container.dataset.attempts || '0');
+                const options = Array.from(container.querySelectorAll('button, .choice-card, .error-word')).filter(b => b.hasAttribute('onclick'));
+
+                if(isCorrect) {
+                    options.forEach(b => b.style.pointerEvents = 'none');
+                    element.style.backgroundColor = 'var(--correct)';
+                    element.style.color = '#000';
+                    element.style.borderColor = 'var(--correct)';
+                    
+                    if (element.classList.contains('error-word')) {
+                        element.innerHTML = correctedText ? `<i class="fa-solid fa-check"></i> ${correctedText}` : `<i class="fa-solid fa-check"></i> ${element.innerText}`;
+                        element.classList.add('correct-choice-anim');
+                    }
+
+                    if(stepNum) { AppState.lockedSteps[stepNum] = false; Engine.updateUI(); }
+                    if(promptId) this.unlockPrompt(promptId);
+
+                } else {
+                    attempts++;
+                    container.dataset.attempts = attempts;
+                    
+                    element.style.backgroundColor = 'var(--incorrect)';
+                    element.style.color = '#fff';
+                    element.style.borderColor = 'var(--incorrect)';
+                    element.style.animation = 'shake 0.4s';
+                    element.style.pointerEvents = 'none';
+                    
+                    if (attempts >= 2 || attempts >= options.length - 1) {
+                        options.forEach(b => b.style.pointerEvents = 'none');
+                        const correctBtn = options.find(b => b.getAttribute('onclick').includes('true'));
+                        if (correctBtn) {
+                            setTimeout(() => {
+                                correctBtn.style.backgroundColor = 'var(--correct)';
+                                correctBtn.style.color = '#000';
+                                correctBtn.style.borderColor = 'var(--correct)';
+                                if (correctBtn.classList.contains('error-word')) {
+                                    correctBtn.innerHTML = correctedText ? `<i class="fa-solid fa-check"></i> ${correctedText}` : `<i class="fa-solid fa-check"></i> ${correctBtn.innerText}`;
+                                    correctBtn.classList.add('correct-choice-anim');
+                                }
+                                if(stepNum) { AppState.lockedSteps[stepNum] = false; Engine.updateUI(); }
+                                if(promptId) this.unlockPrompt(promptId);
+                            }, 500);
+                        }
+                    } else {
+                        setTimeout(() => { element.style.backgroundColor = ''; element.style.color = ''; element.style.borderColor = 'transparent'; element.style.animation = ''; }, 800);
+                    }
+                }
+            },
+
+            checkError(btn, isCorrect, containerId, stepNum, correctedText, promptId) {
+                this.genericCorrect(btn, isCorrect, containerId, stepNum, correctedText, promptId);
+            },
+
+            checkTF(btn, isCorrect, stepNum, promptId) {
+                const row = btn.closest('.track-row');
+                const stepEl = btn.closest('.step');
+                let attempts = parseInt(row.dataset.attempts || '0');
+                const options = Array.from(row.querySelectorAll('.t-btn'));
+                
+                if (isCorrect) {
+                    options.forEach(b => b.style.pointerEvents = 'none');
+                    btn.style.backgroundColor = 'var(--correct)';
+                    btn.style.color = '#000';
+                    btn.style.borderColor = 'var(--correct)';
+                    row.classList.add('correct');
+                    
+                    if(stepEl) {
+                        const allRows = stepEl.querySelectorAll('.track-row');
+                        const allCorrect = Array.from(allRows).every(r => r.classList.contains('correct'));
+                        if(allCorrect) {
+                            AppState.lockedSteps[stepNum] = false;
+                            Engine.updateUI();
+                        }
+                    }
+                    if(promptId) this.unlockPrompt(promptId);
+                } else {
+                    attempts++;
+                    row.dataset.attempts = attempts;
+                    
+                    btn.style.backgroundColor = 'var(--incorrect)';
+                    btn.style.color = '#fff';
+                    btn.style.borderColor = 'var(--incorrect)';
+                    btn.style.animation = 'shake 0.4s';
+                    btn.style.pointerEvents = 'none';
+                    
+                    if (attempts >= 1) {
+                        options.forEach(b => {
+                            b.style.pointerEvents = 'none';
+                            if (b.getAttribute('onclick').includes('true')) {
+                                b.style.backgroundColor = 'var(--correct)';
+                                b.style.color = '#000';
+                                b.style.borderColor = 'var(--correct)';
+                                row.classList.add('correct');
+                            }
+                        });
+                        
+                        if(stepEl) {
+                            const allRows = stepEl.querySelectorAll('.track-row');
+                            const allCorrect = Array.from(allRows).every(r => r.classList.contains('correct'));
+                            if(allCorrect) {
+                                AppState.lockedSteps[stepNum] = false;
+                                Engine.updateUI();
+                            }
+                        }
+                        setTimeout(() => { if(promptId) this.unlockPrompt(promptId); }, 500);
+                    }
+                }
+            },
+
+            // Syntax Builder Engine
+            initSyntaxBuilders() {
+                Object.keys(SyntaxDB).forEach(dzId => {
+                    const data = SyntaxDB[dzId];
+                    const wordBank = document.getElementById(data.bank);
+                    if (!wordBank) return;
+                    wordBank.innerHTML = '';
+                    
+                    let shuffled = [...data.target].sort(() => Math.random() - 0.5);
+                    shuffled.forEach((word, idx) => {
+                        let btn = document.createElement('div');
+                        btn.className = 'word-chip';
+                        btn.innerText = word;
+                        btn.id = `${dzId}_chip_${idx}`;
+                        btn.onclick = () => Engine.moveChip(btn, dzId, data.bank, data.target, data.step);
+                        wordBank.appendChild(btn);
+                    });
+                });
+            },
+
+            moveChip(chip, dzId, bankId, targetArray, stepNum) {
+                if(chip.classList.contains('used')) return;
+                const dz = document.getElementById(dzId);
+                if(dz.classList.contains('success') || dz.classList.contains('auto-solved')) return;
+                
+                const newChip = document.createElement('div');
+                newChip.className = 'word-chip';
+                newChip.style.background = 'var(--accent)';
+                newChip.style.color = '#000';
+                newChip.innerText = chip.innerText;
+                newChip.dataset.sourceId = chip.id;
+
+                newChip.onclick = function() {
+                    if(dz.classList.contains('success') || dz.classList.contains('auto-solved')) return;
+                    dz.removeChild(this);
+                    document.getElementById(this.dataset.sourceId).classList.remove('used');
+                };
+                
+                dz.appendChild(newChip);
+                chip.classList.add('used');
+
+                const currentPhrase = Array.from(dz.children).map(c => c.innerText);
+                
+                if(currentPhrase.length === targetArray.length) {
+                    if(JSON.stringify(currentPhrase) === JSON.stringify(targetArray)) {
+                        dz.classList.add('success');
+                        Array.from(dz.children).forEach(c => {
+                            c.style.background = 'var(--correct)';
+                            c.style.color = '#000';
+                            c.style.pointerEvents = 'none';
+                        });
+                        AppState.lockedSteps[stepNum] = false;
+                        Engine.updateUI();
+                        const promptId = `p${stepNum}`;
+                        if(document.getElementById(promptId)) this.unlockPrompt(promptId);
+                    } else {
+                        SyntaxDB[dzId].errors++;
+                        
+                        dz.style.borderColor = 'var(--incorrect)';
+                        dz.style.animation = 'shake 0.4s';
+                        
+                        if (SyntaxDB[dzId].errors >= 3) {
+                            setTimeout(() => {
+                                dz.innerHTML = ''; dz.style.borderColor = ''; dz.style.animation = ''; dz.classList.add('auto-solved');
+                                targetArray.forEach(w => {
+                                    const finalChip = document.createElement('div');
+                                    finalChip.className = 'word-chip'; finalChip.style.background = 'var(--accent-gold)'; finalChip.style.color = '#000'; finalChip.innerText = w; finalChip.style.pointerEvents = 'none';
+                                    dz.appendChild(finalChip);
+                                });
+                                document.getElementById(bankId).querySelectorAll('.word-chip').forEach(c => c.classList.add('used'));
+                                AppState.lockedSteps[stepNum] = false;
+                                Engine.updateUI();
+                                const promptId = `p${stepNum}`;
+                                if(document.getElementById(promptId)) setTimeout(() => this.unlockPrompt(promptId), 500);
+                            }, 1000);
+                        } else {
+                            setTimeout(() => { 
+                                dz.innerHTML = ''; dz.style.borderColor='rgba(255,255,255,0.2)'; dz.style.animation=''; 
+                                document.getElementById(bankId).querySelectorAll('.word-chip').forEach(c=>c.classList.remove('used')); 
+                            }, 1000);
+                        }
+                    }
+                }
+            },
+
+            // Chat Engine
+            handleChat(btn, isCorrect, containerId, stepNum, promptId) {
+                const container = document.getElementById(containerId);
+                let attempts = parseInt(container.dataset.attempts || '0');
+                const options = Array.from(container.querySelectorAll('.chat-option'));
+                const maxAttempts = Math.min(3, options.length - 1);
+
+                if(isCorrect) {
+                    options.forEach(b => b.style.display = 'none');
+                    setTimeout(() => {
+                        container.innerHTML += `<div class="msg you" style="display:block;">${btn.innerText}</div>`;
+                        AppState.lockedSteps[stepNum] = false;
+                        Engine.updateUI();
+                        if(promptId) this.unlockPrompt(promptId);
+                    }, 400);
+                } else {
+                    attempts++;
+                    container.dataset.attempts = attempts;
+                    btn.style.backgroundColor = 'var(--incorrect)';
+                    btn.style.color = '#fff';
+                    btn.style.animation = 'shake 0.4s';
+                    btn.style.pointerEvents = 'none';
+
+                    if (attempts >= maxAttempts) {
+                        const correctBtn = options.find(b => b.getAttribute('onclick').includes('true'));
+                        options.forEach(b => b.style.display = 'none');
+                        if (correctBtn) {
+                            setTimeout(() => {
+                                container.innerHTML += `<div class="msg you" style="display:block;">${correctBtn.innerText}</div>`;
+                                AppState.lockedSteps[stepNum] = false;
+                                Engine.updateUI();
+                                if(promptId) this.unlockPrompt(promptId);
+                            }, 800);
+                        }
+                    } else {
+                        setTimeout(() => { btn.style.animation = ''; btn.style.backgroundColor = 'rgba(255,255,255,0.03)'; }, 800);
+                    }
+                }
+            },
+
+            // Match Game
+            matchSelected: null,
+            matchesFound: 0,
+            handleMatch(card, matchVarName, matchesFoundVarName, targetMatches, stepNum, promptId) {
+                if(card.style.opacity === '0') return;
+                if(!this[matchVarName]) {
+                    this[matchVarName] = card;
+                    card.style.borderColor = 'var(--accent)';
+                } else {
+                    if(this[matchVarName].dataset.val === card.dataset.val && this[matchVarName] !== card) {
+                        this[matchVarName].style.opacity = '0'; card.style.opacity = '0';
+                        this[matchesFoundVarName] = (this[matchesFoundVarName] || 0) + 1;
+                        if(this[matchesFoundVarName] === targetMatches) {
+                            AppState.lockedSteps[stepNum] = false;
+                            Engine.updateUI();
+                            if(promptId) this.unlockPrompt(promptId);
+                        }
+                    } else {
+                        this[matchVarName].style.borderColor = 'var(--border)';
+                        card.style.animation = 'shake 0.4s';
+                        setTimeout(() => card.style.animation = '', 400);
+                    }
+                    this[matchVarName] = null;
+                }
+            },
+
+            // Memory Game
+            memSeqArr: [],
+            memIndex: 0,
+            memAttempts: 0,
+            startMemoryGame(seqStr) {
+                document.getElementById('mem-seq').style.display = 'none';
+                document.getElementById('mem-start').style.display = 'none';
+                document.getElementById('mem-test').style.display = 'block';
+                this.memIndex = 0;
+                this.memAttempts = 0;
+                this.memSeqArr = seqStr.split('|');
+            },
+            checkMem(btn, word, stepNum, promptId) {
+                const parent = btn.parentElement;
+                if(word === this.memSeqArr[this.memIndex]) {
+                    btn.style.backgroundColor = 'var(--correct)';
+                    btn.style.color = '#000';
+                    btn.style.borderColor = 'var(--correct)';
+                    btn.style.pointerEvents = 'none';
+                    this.memIndex++;
+                    this.memAttempts = 0;
+                    if(this.memIndex === this.memSeqArr.length) {
+                        AppState.lockedSteps[stepNum] = false;
+                        Engine.updateUI();
+                        if(promptId) this.unlockPrompt(promptId);
+                    }
+                } else {
+                    this.memAttempts++;
+                    btn.style.backgroundColor = 'var(--incorrect)';
+                    btn.style.borderColor = 'var(--incorrect)';
+                    btn.style.animation = 'shake 0.4s';
+                    
+                    setTimeout(()=> {
+                        if(btn.style.backgroundColor !== 'var(--correct)') {
+                            btn.style.backgroundColor = 'transparent';
+                            btn.style.borderColor = 'var(--border)';
+                        }
+                    }, 400);
+
+                    if (this.memAttempts >= 3) {
+                        const correctWord = this.memSeqArr[this.memIndex];
+                        const correctBtn = Array.from(parent.querySelectorAll('button')).find(b => b.innerText.trim() === correctWord);
+                        if (correctBtn) {
+                            correctBtn.style.backgroundColor = 'var(--correct)';
+                            correctBtn.style.color = '#000';
+                            correctBtn.style.borderColor = 'var(--correct)';
+                            correctBtn.style.pointerEvents = 'none';
+                        }
+                        this.memIndex++;
+                        this.memAttempts = 0;
+                        if(this.memIndex === this.memSeqArr.length) {
+                            AppState.lockedSteps[stepNum] = false;
+                            Engine.updateUI();
+                            if(promptId) setTimeout(() => this.unlockPrompt(promptId), 500);
+                        }
+                    }
+                }
+            },
+
+            generateRole(promptId) {
+                document.getElementById('role-box').innerText = Roles[Math.floor(Math.random() * Roles.length)];
+                this.unlockPrompt(promptId);
+            },
+
+            openVocab(wordKey) {
+                const data = VocabDB[wordKey.toLowerCase()];
+                if(data) {
+                    document.getElementById('asideContent').innerHTML = `
+                        <p class="code-tag" style="margin-bottom: 10px; display: inline-block;">// DICTIONARY</p>
+                        <h2 style="font-size: 3rem; margin-bottom: 20px; color:#fff; font-family: var(--font-display); text-transform: uppercase;">${wordKey}</h2>
+                        <div class="glass-panel" style="padding: 30px; text-align: left; margin-bottom: 25px; border-radius: 16px; border: 1px solid rgba(255,255,255,0.1); background: rgba(0,0,0,0.4); box-shadow: none;">
+                            <span style="color: var(--accent); font-weight: 900; margin-bottom: 10px; font-size: 0.85rem; letter-spacing: 2px; display:block;">DEFINITION</span>
+                            <p style="color: #fff; margin-bottom: 25px; font-size: 1.15rem; line-height: 1.6;">${data.def}</p>
+                            <span style="color: var(--accent); font-weight: 900; margin-bottom: 10px; font-size: 0.85rem; letter-spacing: 2px; display:block;">EXAMPLE</span>
+                            <p style="font-style: italic; color: #fff; font-size: 1.1rem; line-height: 1.6; margin:0;">"${data.ex}"</p>
+                        </div>
+                        <div style="background: rgba(0,0,0,0.4); border: 1px solid var(--accent); border-radius: 16px; padding: 30px; position: relative;">
+                            <span style="position: absolute; top: -14px; left: 20px; background: var(--accent); color: #000; font-weight: 900; font-size: 0.75rem; letter-spacing: 1px; padding: 5px 12px; border-radius: 4px;">🎙️ SPEAKING HUB</span>
+                            <p style="color: var(--text-dim); font-size: 1.15rem; font-weight: 600; margin:0; line-height: 1.5;">${data.speak}</p>
+                        </div>
+                    `;
+                }
+                document.getElementById('vocab-sidebar').classList.add('open');
+            },
+
+            closeVocab() { document.getElementById('vocab-sidebar').classList.remove('open'); },
+            toggleWhiteboard() { document.getElementById('teacher-board').classList.toggle('open'); },
+            toggleFullscreen() { 
+                try {
+                    if (!document.fullscreenElement) { document.documentElement.requestFullscreen().catch(()=>{}); } 
+                    else { document.exitFullscreen(); }
+                } catch (err) {}
+            }
+        };
+
+        window.Engine = Engine;
+
+        /* =========================================
+           INIT & EVENT LISTENERS
+        ========================================= */
+        window.onload = () => {
+            Engine.initSyntaxBuilders();
+            Engine.updateUI();
+
+            // Swipe listeners
+            let tsX = 0, tsY = 0, teX = 0, teY = 0;
+            const mainContainer = document.getElementById('main-container');
+            if (mainContainer) {
+                mainContainer.addEventListener('touchstart', e => {
+                    if(e.target.closest('.word-chip') || e.target.closest('.error-word') || e.target.tagName === 'INPUT' || e.target.closest('.side-panel') || e.target.closest('button')) return;
+                    tsX = e.changedTouches[0].screenX;
+                    tsY = e.changedTouches[0].screenY;
+                }, {passive: true});
+                mainContainer.addEventListener('touchend', e => {
+                    if(e.target.closest('.word-chip') || e.target.closest('.error-word') || e.target.tagName === 'INPUT' || e.target.closest('.side-panel') || e.target.closest('button')) return;
+                    teX = e.changedTouches[0].screenX;
+                    teY = e.changedTouches[0].screenY;
+                    
+                    if (Math.abs(teX - tsX) > Math.abs(teY - tsY) && Math.abs(teX - tsX) > 50) {
+                        if (teX < tsX && !AppState.lockedSteps[AppState.currentStep]) Engine.nextStep(); // Swipe left
+                        if (teX > tsX && AppState.currentStep > 0) Engine.prevStep(); // Swipe right
+                    }
+                }, {passive: true});
+            }
+        };
+    </script>
+</body>
+</html>
